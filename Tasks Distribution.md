@@ -6,7 +6,7 @@
 . Team Members & Assigned Use Cases
 
 - Mohsen :
-- Elias :
+- Elias : UC-15: checkout
 - Ahmed :
 - Hadi :
 
