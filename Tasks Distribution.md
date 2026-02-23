@@ -5,7 +5,7 @@
 
 . Team Members & Assigned Use Cases
 
-- Mohsen :
+- Mohsen : UC-24: Manage products
 - Elias : UC-15: checkout
 - Ahmed :
 - Hadi :
