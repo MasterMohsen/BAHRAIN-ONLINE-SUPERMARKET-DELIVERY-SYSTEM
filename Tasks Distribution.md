@@ -8,6 +8,6 @@
 - Mohsen : UC-24: Manage products
 - Elias : UC-15: checkout
 - Ahmed :
-- Hadi :
+- Hadi : UC-1: Account Management
 
   Each member is responsible for implementation of their assigned use case.
