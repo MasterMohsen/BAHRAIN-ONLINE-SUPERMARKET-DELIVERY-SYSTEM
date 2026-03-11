@@ -30,7 +30,6 @@ public class Main {
             switch (choice) {
 
 
-
                 case 1:
                     System.out.print("Enter ID: ");
                     int id = scanner.nextInt();
