@@ -1,0 +1,29 @@
+package model;
+
+/**
+ * Account class represents a user account in the system.
+ */
+public class Account {
+
+    private int id;
+    private String username;
+    private String password;
+
+    public Account(int id, String username, String password) {
+        this.id = id;
+        this.username = username;
+        this.password = password;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+}
