@@ -21,40 +21,48 @@ public class AccountUI {
 
         Scanner scanner = new Scanner(System.in);
 
-        System.out.println("1. Register");
-        System.out.println("2. Login");
+        while (true) {
 
-        int choice = scanner.nextInt();
-        scanner.nextLine();
+            System.out.println("\n1. Register");
+            System.out.println("2. Login");
+            System.out.println("3. Exit");
 
-        if (choice == 1) {
-
-            System.out.println("Enter ID:");
-            int id = scanner.nextInt();
+            int choice = scanner.nextInt();
             scanner.nextLine();
 
-            System.out.println("Enter Username:");
-            String username = scanner.nextLine();
+            if (choice == 1) {
 
-            System.out.println("Enter Password:");
-            String password = scanner.nextLine();
+                System.out.println("Enter ID:");
+                int id = scanner.nextInt();
+                scanner.nextLine();
 
-            service.registerAccount(id, username, password);
-            System.out.println("Account created successfully");
+                System.out.println("Enter Username:");
+                String username = scanner.nextLine();
 
-        } else if (choice == 2) {
+                System.out.println("Enter Password:");
+                String password = scanner.nextLine();
 
-            System.out.println("Username:");
-            String username = scanner.nextLine();
+                service.registerAccount(id, username, password);
+                System.out.println("Account created successfully");
 
-            System.out.println("Password:");
-            String password = scanner.nextLine();
+            } else if (choice == 2) {
 
-            if (service.login(username, password)) {
-                System.out.println("Login successful");
-            } else {
-                System.out.println("Invalid credentials");
+                System.out.println("Username:");
+                String username = scanner.nextLine();
+
+                System.out.println("Password:");
+                String password = scanner.nextLine();
+
+                if (service.login(username, password)) {
+                    System.out.println("Login successful");
+                } else {
+                    System.out.println("Invalid credentials");
+                }
+
+            } else if (choice == 3) {
+                break;
             }
         }
     }
+
 }
