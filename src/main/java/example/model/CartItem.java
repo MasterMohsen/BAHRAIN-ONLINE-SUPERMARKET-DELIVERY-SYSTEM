@@ -20,6 +20,7 @@ public class CartItem {
     //
     @Override
     public String toString() {
+                  //example: Mechanical Keyboard  x1  = $120.00
         return String.format("%-20s x%d  = $%.2f",
                 product.getName(), quantity, getSubtotal());
     }

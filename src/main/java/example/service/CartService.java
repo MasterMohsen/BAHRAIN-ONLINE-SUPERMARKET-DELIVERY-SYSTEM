@@ -48,7 +48,7 @@ public class CartService {
     }
 
     public static double getTotal() {
-        return cart.stream().mapToDouble(CartItem::getSubtotal).sum();
+        return cart.stream().mapToDouble(CartItem::getSubtotal).sum();//mapToDouble: convert a data type from stream to double
     }
 
     public static List<CartItem> getCart() {

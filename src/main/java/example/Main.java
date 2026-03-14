@@ -24,7 +24,7 @@ public class Main {
         CartService.displayCart();
 
         // 4. Collect email
-        String email = CustomerService.ValidateEmailFormat(scanner);
+        String email = ValidateEmailFormat(scanner);
 
         // 5. Collect shipping address
         Address address = AddressService.collectAddress(scanner);
@@ -58,5 +58,20 @@ public class Main {
         }
 
         scanner.close();
+    }
+
+
+    public static String ValidateEmailFormat(Scanner scanner){
+        String email ="";
+        while (true) {
+            System.out.print("\nEnter your email: ");
+            email = scanner.nextLine().trim();
+            if (email.matches("^[\\w.+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}$")) {
+                break;
+            }
+            System.out.println("❌ Invalid email address. Please enter a valid email (e.g. john@example.com)");
+        }
+        return email;
+
     }
 }

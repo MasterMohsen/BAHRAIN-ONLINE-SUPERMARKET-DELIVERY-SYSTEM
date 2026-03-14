@@ -1,0 +1,22 @@
+========================================
+Order ID:    ORD-1773521621110
+Date:        2026-03-14 23:53:41
+Email:       elias@gmail.com
+Payment ID:  cs_test_b1YtQa3TqHSNOOABBOrk0hNnLs5jMkeUi4UQoNpGFm0T6JuuNa4btrxXCE
+Status:      PAID
+----------------------------------------
+📦 SHIPPING ADDRESS
+  Name:      elias
+  Street:    8174
+  City:      salman city
+  Country:   bahrain
+  Phone:     38495294
+----------------------------------------
+🛒 ITEMS
+  Mouse                x2  = $59.98
+  Keyboard             x1  = $79.99
+  Headphones           x1  = $149.99
+----------------------------------------
+TOTAL:       $289.96
+========================================
+

@@ -20,6 +20,9 @@ public class Product {
     //
     @Override
     public String toString() {
+        //example of format: [P12] Laptop               - $899.50  (Gaming model)
         return String.format("[%s] %-20s - $%.2f  (%s)", id, name, price, description);
     }
+
+
 }

@@ -8,7 +8,7 @@ public class StripeConfig {
 
     public static void init() {
         if (API_KEY == null || API_KEY.isEmpty()) {
-            throw new RuntimeException("❌ STRIPE_SECRET_KEY environment variable not set!");
+            throw new RuntimeException("STRIPE_SECRET_KEY environment variable not set!");
         }
         Stripe.apiKey = API_KEY;
         System.out.println("✅ Stripe initialized successfully.");

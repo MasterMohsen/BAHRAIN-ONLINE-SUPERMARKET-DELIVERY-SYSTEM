@@ -33,10 +33,10 @@ public class AddressService {
 
     private static String promptPhone(Scanner scanner) {
         while (true) {
-            System.out.print("  Phone Number (e.g. +1234567890): ");
+            System.out.print("  Phone Number (e.g. +973 33333333): ");
             String input = scanner.nextLine().trim();
             // Allow digits, +, spaces, dashes, parentheses
-            if (input.matches("[+\\d\\s\\-()]{7,20}")) return input;
+            if (input.matches("[+\\d\\s\\-()]{8,13}")) return input;
             System.out.println("  ❌ Invalid phone number. Try again.");
         }
     }

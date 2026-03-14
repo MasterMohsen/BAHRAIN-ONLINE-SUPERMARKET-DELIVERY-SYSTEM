@@ -24,6 +24,7 @@ public class Address {
     //
     @Override
     public String toString() {
+                   //example:John Smith | 221B Baker Street, London, UK | 📞 +44 20 7946 0958
         return String.format("%s | %s, %s, %s | 📞 %s",
                 fullName, street, city, country, phone);
     }

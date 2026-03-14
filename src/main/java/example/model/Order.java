@@ -1,7 +1,7 @@
 package example.model;
 
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+import java.time.LocalDateTime;//to identity the order time
+import java.time.format.DateTimeFormatter;//to identity format the order time
 import java.util.List;
 
 public class Order {
@@ -10,7 +10,7 @@ public class Order {
     private Address address;
     private List<CartItem> items;
     private double totalAmount;
-    private String paymentIntentId;
+    private String paymentIntentId;// payment ID
     private String status;
     private String createdAt;
 
