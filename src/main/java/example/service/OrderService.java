@@ -3,8 +3,8 @@ package example.service;
 import example.model.CartItem;
 import example.model.Order;
 
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.FileWriter;//file
+import java.io.IOException;//  try-catch
 import java.util.List;
 
 public class OrderService {
@@ -20,7 +20,7 @@ public class OrderService {
     }
 
     private static void saveToFile(Order order) {
-        try (FileWriter fw = new FileWriter(ORDER_FILE, true)) {
+        try (FileWriter fw = new FileWriter(ORDER_FILE, true)) {// append mode= true for adding new data to the end of a file without deleting the existing content
             fw.write("========================================\n");
             fw.write("Order ID:    " + order.getOrderId()           + "\n");
             fw.write("Date:        " + order.getCreatedAt()         + "\n");

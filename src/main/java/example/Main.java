@@ -1,18 +1,15 @@
 package example;
 
-import example.Config.StripeConfig;
-import example.model.Address;
-import example.model.Order;
-import example.service.AddressService;
-import example.service.CartService;
-import example.service.CheckoutService;
-import example.service.OrderService;
-import example.service.ProductService;
+import example.Config.StripeConfig;//we need this to use StripeConfig class
+import example.model.Address;//we need this to use Address class
+import example.model.Order;//we need this to use Order class
+import example.service.*;//we need this to use all services classes
 
 import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) throws Exception {
+        Scanner scanner = new Scanner(System.in);
 
         // 1. Initialize Stripe
         StripeConfig.init();
@@ -26,11 +23,8 @@ public class Main {
         // 3. Show cart
         CartService.displayCart();
 
-        Scanner scanner = new Scanner(System.in);
-
         // 4. Collect email
-        System.out.print("\nEnter your email: ");
-        String email = scanner.nextLine().trim();
+        String email = CustomerService.ValidateEmailFormat(scanner);
 
         // 5. Collect shipping address
         Address address = AddressService.collectAddress(scanner);

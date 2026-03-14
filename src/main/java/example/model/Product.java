@@ -17,7 +17,7 @@ public class Product {
     public String getName()        { return name; }
     public String getDescription() { return description; }
     public double getPrice()       { return price; }
-
+    //
     @Override
     public String toString() {
         return String.format("[%s] %-20s - $%.2f  (%s)", id, name, price, description);

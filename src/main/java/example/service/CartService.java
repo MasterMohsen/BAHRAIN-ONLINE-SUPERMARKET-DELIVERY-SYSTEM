@@ -1,10 +1,11 @@
 package example.service;
 
-import example.model.CartItem;
-import example.model.Product;
+import example.model.CartItem; // we need import to use cartItem class
+import example.model.Product; // we need import to use Product class
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.ArrayList;// we need import to use ArrayList
+import java.util.List;// we need import to use List class
+
 
 public class CartService {
 

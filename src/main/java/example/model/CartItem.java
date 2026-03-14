@@ -17,6 +17,7 @@ public class CartItem {
         return product.getPrice() * quantity;
     }
 
+    //
     @Override
     public String toString() {
         return String.format("%-20s x%d  = $%.2f",
