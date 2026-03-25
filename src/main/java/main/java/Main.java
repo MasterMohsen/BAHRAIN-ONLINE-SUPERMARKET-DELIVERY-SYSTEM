@@ -1,3 +1,5 @@
+package main.java;
+
 import java.util.Scanner;
 
 /**
@@ -10,17 +12,17 @@ public class Main {
     public static void main(String[] args) {
 
         // Initialize layers
-        ProductRepository repository = new ProductRepository();
-        ProductService service = new ProductService(repository);
+        main.java.ProductRepository repository = new main.java.ProductRepository();
+        main.java.ProductService service = new main.java.ProductService(repository);
 
         Scanner scanner = new Scanner(System.in);
         int choice;
 
         do {
-            System.out.println("\n=== Product Management System ===");
-            System.out.println("1. Add Product");
-            System.out.println("2. Update Product");
-            System.out.println("3. Delete Product");
+            System.out.println("\n=== main.java.Product Management System ===");
+            System.out.println("1. Add main.java.Product");
+            System.out.println("2. Update main.java.Product");
+            System.out.println("3. Delete main.java.Product");
             System.out.println("4. Display Products");
             System.out.println("0. Exit");
             System.out.print("Enter choice: ");

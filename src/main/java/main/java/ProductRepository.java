@@ -1,3 +1,5 @@
+package main.java;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -9,12 +11,12 @@ import java.util.List;
 public class ProductRepository {
 
     // List that acts as an in-memory database
-    private List<Product> productList = new ArrayList<>();
+    private List<main.java.Product> productList = new ArrayList<>();
 
     /**
      * Adds a new product to the repository.
      */
-    public void addProduct(Product product) {
+    public void addProduct(main.java.Product product) {
         productList.add(product);
     }
 
@@ -30,8 +32,8 @@ public class ProductRepository {
      * Updates an existing product.
      * Returns true if product is found and updated.
      */
-    public boolean updateProduct(Product updatedProduct) {
-        for (Product p : productList) {
+    public boolean updateProduct(main.java.Product updatedProduct) {
+        for (main.java.Product p : productList) {
             if (p.getId() == updatedProduct.getId()) {
                 p.setName(updatedProduct.getName());
                 p.setPrice(updatedProduct.getPrice());
@@ -44,7 +46,7 @@ public class ProductRepository {
     /**
      * Returns all products.
      */
-    public List<Product> getAllProducts() {
+    public List<main.java.Product> getAllProducts() {
         return productList;
     }
 }

@@ -1,6 +1,8 @@
+package main.java;
+
 /**
- * Product entity class.
- * This class represents the Product object in the system.
+ * main.java.Product entity class.
+ * This class represents the main.java.Product object in the system.
  * It contains product attributes and their getters/setters.
  */
 public class Product {
@@ -54,6 +56,6 @@ public class Product {
      */
     @Override
     public String toString() {
-        return "Product ID: " + id + ", Name: " + name + ", Price: " + price;
+        return "main.java.Product ID: " + id + ", Name: " + name + ", Price: " + price;
     }
 }

@@ -1,3 +1,5 @@
+package main.java;
+
 /**
  * Business Layer Class.
  * This class contains business logic and validation rules.
@@ -6,12 +8,12 @@
 public class ProductService {
 
     // Reference to Data Layer
-    private ProductRepository repository;
+    private main.java.ProductRepository repository;
 
     /**
      * Constructor to inject repository dependency.
      */
-    public ProductService(ProductRepository repository) {
+    public ProductService(main.java.ProductRepository repository) {
         this.repository = repository;
     }
 
@@ -26,9 +28,9 @@ public class ProductService {
             return;
         }
 
-        Product product = new Product(id, name, price);
+        main.java.Product product = new main.java.Product(id, name, price);
         repository.addProduct(product);
-        System.out.println("Product added successfully.");
+        System.out.println("main.java.Product added successfully.");
     }
 
     /**
@@ -38,9 +40,9 @@ public class ProductService {
         boolean deleted = repository.deleteProduct(id);
 
         if (deleted) {
-            System.out.println("Product deleted successfully.");
+            System.out.println("main.java.Product deleted successfully.");
         } else {
-            System.out.println("Product not found.");
+            System.out.println("main.java.Product not found.");
         }
     }
 
@@ -54,13 +56,13 @@ public class ProductService {
             return;
         }
 
-        Product updatedProduct = new Product(id, name, price);
+        main.java.Product updatedProduct = new main.java.Product(id, name, price);
         boolean updated = repository.updateProduct(updatedProduct);
 
         if (updated) {
-            System.out.println("Product updated successfully.");
+            System.out.println("main.java.Product updated successfully.");
         } else {
-            System.out.println("Product not found.");
+            System.out.println("main.java.Product not found.");
         }
     }
 
@@ -68,7 +70,7 @@ public class ProductService {
      * Displays all products.
      */
     public void displayProducts() {
-        for (Product p : repository.getAllProducts()) {
+        for (main.java.Product p : repository.getAllProducts()) {
             System.out.println(p);
         }
     }
