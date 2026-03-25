@@ -1,3 +1,5 @@
+package main.java;
+
 import java.util.List;
 
 /**
@@ -8,14 +10,14 @@ import java.util.List;
  */
 public class CartService {
 
-    private CartData cartData;
+    private main.java.CartData cartData;
 
     /**
      * Constructor receives the data layer dependency.
      *
      * @param cartData The data layer used to store cart items
      */
-    public CartService(CartData cartData) {
+    public CartService(main.java.CartData cartData) {
         this.cartData = cartData;
     }
 

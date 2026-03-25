@@ -1,3 +1,5 @@
+package main.java;
+
 /**
  * Main class used to start the program.
  * It creates objects for each layer and connects them together.
@@ -7,13 +9,13 @@ public class entryPoint {
     public static void main(String[] args) {
 
         // Create data layer
-        CartData dataLayer = new CartData();
+        main.java.CartData dataLayer = new main.java.CartData();
 
         // Create business layer
-        CartService businessLayer = new CartService(dataLayer);
+        main.java.CartService businessLayer = new main.java.CartService(dataLayer);
 
         // Create presentation layer
-        CartUI ui = new CartUI(businessLayer);
+        main.java.CartUI ui = new main.java.CartUI(businessLayer);
 
         // Start the application
         ui.start();

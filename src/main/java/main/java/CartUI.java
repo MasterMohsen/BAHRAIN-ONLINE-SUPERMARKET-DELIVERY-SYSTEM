@@ -1,3 +1,5 @@
+package main.java;
+
 import java.util.List;
 import java.util.Scanner;
 
@@ -9,14 +11,14 @@ import java.util.Scanner;
  */
 public class CartUI {
 
-    private CartService cartService;
+    private main.java.CartService cartService;
 
     /**
      * Constructor receives the business layer service.
      *
      * @param cartService Service responsible for cart logic
      */
-    public CartUI(CartService cartService) {
+    public CartUI(main.java.CartService cartService) {
         this.cartService = cartService;
     }
 
