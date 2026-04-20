@@ -1,4 +1,4 @@
-package test;
+package test.java;
 
 import data.AccountRepository;
 import model.Account;
