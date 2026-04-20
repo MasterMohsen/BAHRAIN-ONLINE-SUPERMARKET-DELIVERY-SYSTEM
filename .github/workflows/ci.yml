@@ -1,32 +1,23 @@
-name: CI – Build, JUnit & Randoop Tests
+name: CI - Build JUnit and Randoop Tests
 
-# ──────────────────────────────────────────────────────────────
-# Triggers
-# ──────────────────────────────────────────────────────────────
 on:
   pull_request:
     branches: [ main, master ]
   push:
     branches: [ main, master ]
 
-# ──────────────────────────────────────────────────────────────
-# Permissions – fixed: added pull-requests write so the action
-# can post comments on PRs
-# ──────────────────────────────────────────────────────────────
 permissions:
   contents: read
   checks: write
-  pull-requests: write   # ← was missing, caused the 403 error
+  pull-requests: write
 
 jobs:
-  # ============================================================
-  # JOB 1 – Compile & run hand-written JUnit tests
-  # ============================================================
-  junit:
-    name: "JUnit Tests"
-    runs-on: ubuntu-latest
 
+  junit:
+    name: JUnit Tests
+    runs-on: ubuntu-latest
     steps:
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -36,100 +27,76 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      # Download all required JARs into lib/
-      - name: Download test dependencies
+      - name: Download JUnit dependencies
         run: |
           mkdir -p lib
+          curl -sSL -o lib/junit-platform-console-standalone.jar "https://repo1.maven.org/maven2/org/junit/platform/junit-platform-console-standalone/1.10.2/junit-platform-console-standalone-1.10.2.jar"
+          curl -sSL -o lib/junit4.jar "https://repo1.maven.org/maven2/junit/junit/4.13.2/junit-4.13.2.jar"
+          curl -sSL -o lib/hamcrest.jar "https://repo1.maven.org/maven2/org/hamcrest/hamcrest-core/1.3/hamcrest-core-1.3.jar"
 
-          curl -sSL -o lib/junit-platform-console-standalone.jar \
-            "https://repo1.maven.org/maven2/org/junit/platform/junit-platform-console-standalone/1.10.2/junit-platform-console-standalone-1.10.2.jar"
+      - name: Show full source tree
+        run: find src -type f -name "*.java" | sort
 
-          curl -sSL -o lib/junit4.jar \
-            "https://repo1.maven.org/maven2/junit/junit/4.13.2/junit-4.13.2.jar"
-
-          curl -sSL -o lib/hamcrest.jar \
-            "https://repo1.maven.org/maven2/org/hamcrest/hamcrest-core/1.3/hamcrest-core-1.3.jar"
-
-      # Show the full source tree so we can debug what's found
-      - name: Debug – show source tree
+      - name: Compile main sources
         run: |
-          echo "=== Full src/ structure ==="
-          find src -type f | sort
-          echo ""
-          echo "=== Java files found ==="
-          find src -name "*.java" | sort
+          mkdir -p out/main
+          find src -name "*.java" \
+            ! -path "*/test/*" \
+            ! -name "entry.java" \
+            > sources_main.txt
+          echo "--- Main sources ---"
+          cat sources_main.txt
+          javac -cp "lib/*" -d out/main @sources_main.txt
+          echo "Compiled classes:"
+          find out/main -name "*.class" | sort
 
-      # Compile ALL java files (main + test together) so imports resolve
-      - name: Compile all sources
+      - name: Compile test sources
         run: |
-          mkdir -p out/all
-          find src -name "*.java" > all_sources.txt
-          echo "=== Files to compile ==="
-          cat all_sources.txt
-          if [ -s all_sources.txt ]; then
-            javac -cp "lib/*" -d out/all @all_sources.txt
-            echo "Compilation succeeded"
+          mkdir -p out/test
+          find src -path "*/test/*" -name "*.java" > sources_test.txt
+          echo "--- Test sources ---"
+          cat sources_test.txt
+          if [ -s sources_test.txt ]; then
+            javac -cp "lib/*:out/main" -d out/test @sources_test.txt
           else
-            echo "No Java files found under src/"
+            echo "No test sources found"
           fi
 
-      # Detect test classes (any file containing @Test)
-      - name: Detect test classes
-        run: |
-          echo "=== Scanning for test classes ==="
-          grep -rl "@Test" src --include="*.java" \
-            | sed 's|src/||; s|/|.|g; s|\.java$||' \
-            > test_classes.txt || true
-          echo "=== Test classes found ==="
-          cat test_classes.txt || echo "(none)"
-
-      # Run JUnit – scan entire classpath for @Test methods
       - name: Run JUnit tests
         run: |
           mkdir -p test-results/junit
-          if [ ! -s test_classes.txt ]; then
-            echo "No test classes detected – creating empty report"
-            cat > test-results/junit/empty.xml <<'EOF'
-          <?xml version="1.0" encoding="UTF-8"?>
-          <testsuite name="NoTests" tests="0" failures="0" errors="0" skipped="0"/>
-          EOF
+          if [ -z "$(find out/test -name '*.class' 2>/dev/null)" ]; then
+            echo "No test classes found - writing empty report"
+            printf '<?xml version="1.0" encoding="UTF-8"?>\n<testsuite name="NoTests" tests="0" failures="0" errors="0" skipped="0"/>\n' > test-results/junit/empty.xml
             exit 0
           fi
-
           java -jar lib/junit-platform-console-standalone.jar \
-            --class-path "out/all:lib/*" \
+            --class-path "out/main:out/test:lib/*" \
             --scan-class-path \
             --reports-dir test-results/junit \
             --fail-if-no-tests=false
 
-          echo "=== Contents of test-results/junit/ ==="
-          ls -la test-results/junit/
-
-      # Publish results to PR
-      - name: Publish JUnit Test Results
+      - name: Publish JUnit results
         uses: EnricoMi/publish-unit-test-result-action@v2
         if: always()
         with:
           files: test-results/junit/**/*.xml
-          check_name: "JUnit Test Results"
+          check_name: JUnit Test Results
           comment_mode: always
 
-      - name: Upload JUnit XML reports
+      - name: Upload JUnit reports
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: junit-reports
           path: test-results/junit/
 
-  # ============================================================
-  # JOB 2 – Randoop regression-test generation & execution
-  # ============================================================
   randoop:
-    name: "Randoop Regression Tests"
+    name: Randoop Regression Tests
     runs-on: ubuntu-latest
     needs: junit
-
     steps:
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -142,58 +109,44 @@ jobs:
       - name: Download dependencies
         run: |
           mkdir -p lib
+          curl -sSL -o lib/junit4.jar "https://repo1.maven.org/maven2/junit/junit/4.13.2/junit-4.13.2.jar"
+          curl -sSL -o lib/hamcrest.jar "https://repo1.maven.org/maven2/org/hamcrest/hamcrest-core/1.3/hamcrest-core-1.3.jar"
+          curl -sSL -o lib/junit-platform-console-standalone.jar "https://repo1.maven.org/maven2/org/junit/platform/junit-platform-console-standalone/1.10.2/junit-platform-console-standalone-1.10.2.jar"
+          curl -sSL -o lib/randoop.jar "https://github.com/randoop/randoop/releases/download/v4.3.2/randoop-4.3.2.jar"
 
-          curl -sSL -o lib/junit-platform-console-standalone.jar \
-            "https://repo1.maven.org/maven2/org/junit/platform/junit-platform-console-standalone/1.10.2/junit-platform-console-standalone-1.10.2.jar"
-
-          curl -sSL -o lib/junit4.jar \
-            "https://repo1.maven.org/maven2/junit/junit/4.13.2/junit-4.13.2.jar"
-
-          curl -sSL -o lib/hamcrest.jar \
-            "https://repo1.maven.org/maven2/org/hamcrest/hamcrest-core/1.3/hamcrest-core-1.3.jar"
-
-          curl -sSL -o lib/randoop.jar \
-            "https://github.com/randoop/randoop/releases/download/v4.3.2/randoop-4.3.2.jar"
-
-      - name: Compile main (non-test) sources
+      - name: Compile main sources into .class files
         run: |
           mkdir -p out/main
           find src -name "*.java" \
-            ! -name "*Test*.java" \
-            ! -name "*test*.java" \
-            ! -path "*/test/*" > sources_main.txt
-
-          echo "=== Main sources ==="
+            ! -path "*/test/*" \
+            ! -name "entry.java" \
+            > sources_main.txt
+          echo "--- Compiling these files ---"
           cat sources_main.txt
+          javac -cp "lib/*" -d out/main @sources_main.txt
+          echo "--- .class files produced ---"
+          find out/main -name "*.class" | sort
 
-          if [ -s sources_main.txt ]; then
-            javac -cp "lib/*" -d out/main @sources_main.txt
-            echo "Main compilation succeeded"
-          else
-            echo "No main source files found"
-            exit 0
-          fi
-
-      - name: Collect class list for Randoop
+      - name: Build class list for Randoop
         run: |
           find out/main -name "*.class" ! -name "*\$*" \
             | sed 's|out/main/||; s|/|.|g; s|\.class$||' \
-            > randoop_classes.txt
-          echo "=== Classes for Randoop ==="
-          cat randoop_classes.txt
-
-      - name: Generate Randoop regression tests
-        run: |
-          mkdir -p randoop-generated
-
+            | tee randoop_classes.txt
+          echo "--- Total classes: $(wc -l < randoop_classes.txt) ---"
           if [ ! -s randoop_classes.txt ]; then
-            echo "No classes found – skipping Randoop"
-            exit 0
+            echo "ERROR: No classes found for Randoop"
+            exit 1
           fi
 
-          # Build one --testclass= argument per class
-          TESTCLASS_ARGS=$(awk '{print "--testclass=" $0}' randoop_classes.txt | tr '\n' ' ')
-
+      - name: Generate Randoop tests
+        run: |
+          mkdir -p randoop-generated
+          TESTCLASS_ARGS=""
+          while IFS= read -r cls; do
+            TESTCLASS_ARGS="$TESTCLASS_ARGS --testclass=$cls"
+          done < randoop_classes.txt
+          echo "--- Running Randoop on classes ---"
+          cat randoop_classes.txt
           java -cp "out/main:lib/randoop.jar:lib/junit4.jar:lib/hamcrest.jar" \
             randoop.main.Main gentests \
             $TESTCLASS_ARGS \
@@ -202,47 +155,46 @@ jobs:
             --junit-output-dir=randoop-generated \
             --regression-test-basename=RandoopRegression \
             --error-test-basename=RandoopError \
-            2>&1 | tee randoop-generation.log || true
+            --silently-ignore-bad-class-names=true \
+            2>&1 | tee randoop-generation.log
+          echo "--- Files generated ---"
+          ls -la randoop-generated/ || echo "(none)"
 
-          echo "=== Generated files ==="
-          ls randoop-generated/ || echo "(none)"
-
-      - name: Compile Randoop-generated tests
+      - name: Compile Randoop tests
         run: |
-          JAVA_FILES=$(find randoop-generated -name "*.java" 2>/dev/null | wc -l)
-          if [ "$JAVA_FILES" -eq 0 ]; then
-            echo "No Randoop test files generated – skipping"
+          COUNT=$(find randoop-generated -name "*.java" 2>/dev/null | wc -l)
+          echo "Randoop generated $COUNT test file(s)"
+          mkdir -p test-results/randoop
+          if [ "$COUNT" -eq 0 ]; then
+            echo "Check randoop-generation.log in artifacts for the reason"
+            printf '<?xml version="1.0" encoding="UTF-8"?>\n<testsuite name="RandoopNoTests" tests="0" failures="0" errors="0" skipped="0"/>\n' > test-results/randoop/empty.xml
             exit 0
           fi
           mkdir -p out/randoop
+          find randoop-generated -name "*.java" > randoop_sources.txt
           javac -cp "out/main:lib/junit4.jar:lib/hamcrest.jar:lib/junit-platform-console-standalone.jar" \
             -d out/randoop \
-            randoop-generated/*.java
+            @randoop_sources.txt
 
-      - name: Run Randoop regression tests
+      - name: Run Randoop tests
         run: |
           mkdir -p test-results/randoop
-          if [ ! -d out/randoop ] || [ -z "$(ls -A out/randoop 2>/dev/null)" ]; then
-            echo "No compiled Randoop tests – writing empty report"
-            cat > test-results/randoop/empty.xml <<'EOF'
-          <?xml version="1.0" encoding="UTF-8"?>
-          <testsuite name="NoRandoopTests" tests="0" failures="0" errors="0" skipped="0"/>
-          EOF
+          if [ -z "$(find out/randoop -name '*.class' 2>/dev/null)" ]; then
+            echo "No compiled Randoop tests to run"
             exit 0
           fi
-
           java -jar lib/junit-platform-console-standalone.jar \
             --class-path "out/main:out/randoop:lib/*" \
             --scan-class-path \
             --reports-dir test-results/randoop \
             --fail-if-no-tests=false
 
-      - name: Publish Randoop Test Results
+      - name: Publish Randoop results
         uses: EnricoMi/publish-unit-test-result-action@v2
         if: always()
         with:
           files: test-results/randoop/**/*.xml
-          check_name: "Randoop Regression Test Results"
+          check_name: Randoop Regression Test Results
           comment_mode: always
 
       - name: Upload Randoop artifacts
@@ -253,4 +205,5 @@ jobs:
           path: |
             randoop-generated/
             randoop-generation.log
+            randoop_classes.txt
             test-results/randoop/
