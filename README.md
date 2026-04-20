@@ -1,2 +1,0 @@
-# BAHRAIN-ONLINE-SUPERMARKET-DELIVERY-SYSTEM
-This is our ITSE305 project repository
