@@ -38,7 +38,7 @@ public class Main {
 
                     System.out.print("Enter Name: ");
                     String name = scanner.nextLine();
-
+                    System.out.println("HRllo!");
                     System.out.print("Enter Price: ");
                     double price = scanner.nextDouble();
 
