@@ -11,7 +11,7 @@ public class Main {
     public static void main(String[] args) throws Exception {
         Scanner scanner = new Scanner(System.in);
 
-        // 1. Initialize Stripe/
+        // 1. Initialize Stripe/////
         StripeConfig.init();
 
         // 2. Simulate pre-filled cart
