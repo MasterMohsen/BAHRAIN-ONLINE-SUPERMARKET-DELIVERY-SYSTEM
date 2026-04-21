@@ -1,4 +1,4 @@
-name: CI - Build JUnit and Randoop Tests
+name: CI - Build JUnit and EvoSuite Tests
 
 on:
   pull_request:
@@ -13,6 +13,9 @@ permissions:
 
 jobs:
 
+  # ============================================================
+  # JOB 1 - JUnit (hand-written tests)
+  # ============================================================
   junit:
     name: JUnit Tests
     runs-on: ubuntu-latest
@@ -34,7 +37,7 @@ jobs:
           curl -sSL -o lib/junit4.jar "https://repo1.maven.org/maven2/junit/junit/4.13.2/junit-4.13.2.jar"
           curl -sSL -o lib/hamcrest.jar "https://repo1.maven.org/maven2/org/hamcrest/hamcrest-core/1.3/hamcrest-core-1.3.jar"
 
-      - name: Show full source tree
+      - name: Show source tree
         run: find src -type f -name "*.java" | sort
 
       - name: Compile main sources
@@ -47,7 +50,7 @@ jobs:
           echo "--- Main sources ---"
           cat sources_main.txt
           javac -cp "lib/*" -d out/main @sources_main.txt
-          echo "--- Compiled .class files ---"
+          echo "--- Compiled classes ---"
           find out/main -name "*.class" | sort
 
       - name: Compile test sources
@@ -90,8 +93,14 @@ jobs:
           name: junit-reports
           path: test-results/junit/
 
-  randoop:
-    name: Randoop Regression Tests
+  # ============================================================
+  # JOB 2 - EvoSuite (auto-generates tests using genetic algorithm)
+  # EvoSuite is compiled for Java 8, runs best on Java 11
+  # It uses -target to scan ALL compiled classes automatically
+  # No need to list classes manually like Randoop required
+  # ============================================================
+  evosuite:
+    name: EvoSuite Generated Tests
     runs-on: ubuntu-latest
     needs: junit
     steps:
@@ -99,22 +108,26 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up JDK 17
+      # EvoSuite requires Java 11 - it does not support Java 17+
+      - name: Set up JDK 11 for EvoSuite
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
+          java-version: '11'
           distribution: 'temurin'
 
       - name: Download dependencies
         run: |
           mkdir -p lib
+
           curl -sSL -o lib/junit4.jar "https://repo1.maven.org/maven2/junit/junit/4.13.2/junit-4.13.2.jar"
           curl -sSL -o lib/hamcrest.jar "https://repo1.maven.org/maven2/org/hamcrest/hamcrest-core/1.3/hamcrest-core-1.3.jar"
           curl -sSL -o lib/junit-platform-console-standalone.jar "https://repo1.maven.org/maven2/org/junit/platform/junit-platform-console-standalone/1.10.2/junit-platform-console-standalone-1.10.2.jar"
 
-          # randoop-all bundles ALL dependencies including plume-lib
-          # This fixes: NoClassDefFoundError org/plumelib/options/Options$ArgException
-          curl -sSL -o lib/randoop-all.jar "https://github.com/randoop/randoop/releases/download/v4.3.2/randoop-all-4.3.2.jar"
+          # EvoSuite: two jars needed
+          # evosuite-1.0.6.jar        = the test generator (run this to generate)
+          # evosuite-standalone-runtime = must be on classpath when compiling/running generated tests
+          curl -sSL -o lib/evosuite.jar "https://github.com/EvoSuite/evosuite/releases/download/v1.0.6/evosuite-1.0.6.jar"
+          curl -sSL -o lib/evosuite-runtime.jar "https://github.com/EvoSuite/evosuite/releases/download/v1.0.6/evosuite-standalone-runtime-1.0.6.jar"
 
           echo "--- Downloaded JARs ---"
           ls -lh lib/
@@ -126,109 +139,92 @@ jobs:
             ! -path "*/test/*" \
             ! -name "entry.java" \
             > sources_main.txt
-          echo "--- Files being compiled ---"
+          echo "--- Compiling ---"
           cat sources_main.txt
           javac -cp "lib/*" -d out/main @sources_main.txt
-          echo "--- .class files produced ---"
+          echo "--- .class files ---"
           find out/main -name "*.class" | sort
 
-      - name: Detect class names from package declarations
+      # EvoSuite uses -target to point at the compiled classes directory
+      # It automatically finds and tests every public class — no class list needed
+      # -criterion BRANCH means it targets branch coverage specifically
+      # Generated tests go into evosuite-tests/ by default
+      - name: Generate EvoSuite tests
         run: |
-          > randoop_classes.txt
-          while IFS= read -r javafile; do
-            pkg=$(grep -m1 "^package " "$javafile" | sed 's/package //; s/;//; s/ //g')
-            classname=$(basename "$javafile" .java)
-            if [ -n "$pkg" ]; then
-              echo "${pkg}.${classname}" >> randoop_classes.txt
-            else
-              echo "${classname}" >> randoop_classes.txt
-            fi
-          done < sources_main.txt
+          mkdir -p evosuite-tests
+          echo "--- Running EvoSuite on out/main ---"
 
-          echo "--- Classes Randoop will test ---"
-          cat randoop_classes.txt
-          echo "--- Total: $(wc -l < randoop_classes.txt) class(es) ---"
+          java -jar lib/evosuite.jar \
+            -target out/main \
+            -projectCP out/main \
+            -criterion BRANCH \
+            -Dsearch_budget=60 \
+            -Doutput_variables=TARGET_CLASS,criterion,Coverage,Total_Goals,Covered_Goals \
+            -Dtest_dir=evosuite-tests \
+            2>&1 | tee evosuite-generation.log
 
-      - name: Generate Randoop tests
+          echo "--- Generated test files ---"
+          find evosuite-tests -name "*.java" | sort
+          echo "--- Total: $(find evosuite-tests -name '*.java' | wc -l) file(s) ---"
+
+      - name: Compile EvoSuite generated tests
         run: |
-          mkdir -p randoop-generated
+          COUNT=$(find evosuite-tests -name "*.java" 2>/dev/null | wc -l)
+          echo "EvoSuite generated $COUNT test file(s)"
+          mkdir -p test-results/evosuite
 
-          if [ ! -s randoop_classes.txt ]; then
-            echo "ERROR: no classes found"
-            exit 1
-          fi
-
-          TESTCLASS_ARGS=""
-          while IFS= read -r cls; do
-            TESTCLASS_ARGS="$TESTCLASS_ARGS --testclass=$cls"
-          done < randoop_classes.txt
-
-          echo "--- Running Randoop ---"
-          cat randoop_classes.txt
-
-          # Use randoop-all.jar — contains all plume-lib dependencies
-          java -cp "out/main:lib/randoop-all.jar:lib/junit4.jar:lib/hamcrest.jar" \
-            randoop.main.Main gentests \
-            $TESTCLASS_ARGS \
-            --time-limit=60 \
-            --output-limit=500 \
-            --junit-output-dir=randoop-generated \
-            --regression-test-basename=RandoopRegression \
-            --error-test-basename=RandoopError \
-            --silently-ignore-bad-class-names=true \
-            2>&1 | tee randoop-generation.log
-
-          echo "--- Generated files ---"
-          ls -la randoop-generated/ || echo "(directory empty)"
-          echo "--- .java count: $(find randoop-generated -name '*.java' | wc -l) ---"
-
-      - name: Compile Randoop tests
-        run: |
-          COUNT=$(find randoop-generated -name "*.java" 2>/dev/null | wc -l)
-          echo "Randoop generated $COUNT test file(s)"
-          mkdir -p test-results/randoop
           if [ "$COUNT" -eq 0 ]; then
-            echo "Check randoop-generation.log in artifacts"
-            printf '<?xml version="1.0" encoding="UTF-8"?>\n<testsuite name="RandoopNoTests" tests="0" failures="0" errors="0" skipped="0"/>\n' > test-results/randoop/empty.xml
+            echo "No tests generated - check evosuite-generation.log in artifacts"
+            printf '<?xml version="1.0" encoding="UTF-8"?>\n<testsuite name="EvoSuiteNoTests" tests="0" failures="0" errors="0" skipped="0"/>\n' > test-results/evosuite/empty.xml
             exit 0
           fi
-          mkdir -p out/randoop
-          find randoop-generated -name "*.java" > randoop_sources.txt
-          javac -cp "out/main:lib/junit4.jar:lib/hamcrest.jar:lib/junit-platform-console-standalone.jar" \
-            -d out/randoop \
-            @randoop_sources.txt
-          echo "--- Compiled Randoop classes ---"
-          find out/randoop -name "*.class" | sort
 
-      - name: Run Randoop tests
+          mkdir -p out/evosuite
+          find evosuite-tests -name "*.java" > evosuite_sources.txt
+          echo "--- Compiling EvoSuite tests ---"
+          cat evosuite_sources.txt
+
+          # evosuite-runtime.jar must be on classpath when compiling generated tests
+          javac -cp "out/main:lib/junit4.jar:lib/hamcrest.jar:lib/evosuite-runtime.jar" \
+            -d out/evosuite \
+            @evosuite_sources.txt
+
+          echo "--- Compiled classes ---"
+          find out/evosuite -name "*.class" | sort
+
+      - name: Run EvoSuite tests
         run: |
-          mkdir -p test-results/randoop
-          if [ -z "$(find out/randoop -name '*.class' 2>/dev/null)" ]; then
-            echo "No compiled Randoop tests to run"
+          mkdir -p test-results/evosuite
+
+          if [ -z "$(find out/evosuite -name '*.class' 2>/dev/null)" ]; then
+            echo "No compiled EvoSuite tests to run"
             exit 0
           fi
+
+          # evosuite-runtime.jar must also be on classpath when running
           java -jar lib/junit-platform-console-standalone.jar \
-            --class-path "out/main:out/randoop:lib/*" \
+            --class-path "out/main:out/evosuite:lib/junit4.jar:lib/hamcrest.jar:lib/evosuite-runtime.jar" \
             --scan-class-path \
-            --reports-dir test-results/randoop \
+            --reports-dir test-results/evosuite \
             --fail-if-no-tests=false
 
-      - name: Publish Randoop results
+          echo "--- test-results/evosuite/ ---"
+          ls -la test-results/evosuite/
+
+      - name: Publish EvoSuite results
         uses: EnricoMi/publish-unit-test-result-action@v2
         if: always()
         with:
-          files: test-results/randoop/**/*.xml
-          check_name: Randoop Regression Test Results
+          files: test-results/evosuite/**/*.xml
+          check_name: EvoSuite Generated Test Results
           comment_mode: always
 
-      - name: Upload Randoop artifacts
+      - name: Upload EvoSuite artifacts
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: randoop-artifacts
+          name: evosuite-artifacts
           path: |
-            randoop-generated/
-            randoop-generation.log
-            randoop_classes.txt
-            sources_main.txt
-            test-results/randoop/
+            evosuite-tests/
+            evosuite-generation.log
+            test-results/evosuite/
