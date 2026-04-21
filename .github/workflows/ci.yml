@@ -155,7 +155,7 @@ jobs:
 
       # ── Step 3: Run Randoop ──────────────────────────────────
       # No || true — we want to see real errors
-      # All stdout AND stderr go to the log file
+      # All stdout & stderr go to the log file
       - name: Generate Randoop tests
         run: |
           mkdir -p randoop-generated
