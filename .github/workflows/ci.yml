@@ -65,6 +65,9 @@ jobs:
           curl -sSL -o lib/stripe-java.jar \
             "https://repo1.maven.org/maven2/com/stripe/stripe-java/24.22.0/stripe-java-24.22.0.jar"
 
+          echo "=== lib contents ==="
+          ls -la lib
+
       # Show the full source tree so we can debug what's found
       - name: Debug – show source tree
         run: |
@@ -97,6 +100,12 @@ jobs:
             > test_classes.txt || true
           echo "=== Test classes found ==="
           cat test_classes.txt || echo "(none)"
+
+      - name: Debug runtime jars
+        run: |
+          echo "=== JAR files in lib ==="
+          ls -la lib
+          
 
       # Run JUnit – scan entire classpath for @Test methods
       - name: Run JUnit tests
