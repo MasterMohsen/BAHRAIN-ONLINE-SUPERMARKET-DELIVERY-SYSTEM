@@ -47,7 +47,7 @@ jobs:
           echo "--- Main sources ---"
           cat sources_main.txt
           javac -cp "lib/*" -d out/main @sources_main.txt
-          echo "Compiled classes:"
+          echo "--- Compiled .class files ---"
           find out/main -name "*.class" | sort
 
       - name: Compile test sources
@@ -66,7 +66,6 @@ jobs:
         run: |
           mkdir -p test-results/junit
           if [ -z "$(find out/test -name '*.class' 2>/dev/null)" ]; then
-            echo "No test classes found - writing empty report"
             printf '<?xml version="1.0" encoding="UTF-8"?>\n<testsuite name="NoTests" tests="0" failures="0" errors="0" skipped="0"/>\n' > test-results/junit/empty.xml
             exit 0
           fi
@@ -114,39 +113,71 @@ jobs:
           curl -sSL -o lib/junit-platform-console-standalone.jar "https://repo1.maven.org/maven2/org/junit/platform/junit-platform-console-standalone/1.10.2/junit-platform-console-standalone-1.10.2.jar"
           curl -sSL -o lib/randoop.jar "https://github.com/randoop/randoop/releases/download/v4.3.2/randoop-4.3.2.jar"
 
-      - name: Compile main sources into .class files
+      # ── Step 1: Compile ──────────────────────────────────────
+      # -verbose flag shows exactly which source file maps to
+      # which package, so we can see the real package names
+      - name: Compile main sources
         run: |
           mkdir -p out/main
           find src -name "*.java" \
             ! -path "*/test/*" \
             ! -name "entry.java" \
             > sources_main.txt
-          echo "--- Compiling these files ---"
+          echo "--- Files being compiled ---"
           cat sources_main.txt
-          javac -cp "lib/*" -d out/main @sources_main.txt
+          javac -verbose -cp "lib/*" -d out/main @sources_main.txt 2>&1 \
+            | grep "^\[" | head -40
           echo "--- .class files produced ---"
           find out/main -name "*.class" | sort
 
-      - name: Build class list for Randoop
+      # ── Step 2: Detect package names from source files ───────
+      # Read the actual "package X.Y.Z;" declaration from each
+      # .java file and combine with the class name — this is the
+      # only reliable way to get the fully-qualified class name
+      - name: Detect class names from package declarations
         run: |
-          find out/main -name "*.class" ! -name "*\$*" \
-            | sed 's|out/main/||; s|/|.|g; s|\.class$||' \
-            | tee randoop_classes.txt
-          echo "--- Total classes: $(wc -l < randoop_classes.txt) ---"
-          if [ ! -s randoop_classes.txt ]; then
-            echo "ERROR: No classes found for Randoop"
-            exit 1
-          fi
+          > randoop_classes.txt
+          while IFS= read -r javafile; do
+            # Extract package line e.g. "package main.java;"
+            pkg=$(grep -m1 "^package " "$javafile" | sed 's/package //; s/;//; s/ //g')
+            # Extract public class name from filename
+            classname=$(basename "$javafile" .java)
+            if [ -n "$pkg" ]; then
+              echo "${pkg}.${classname}" >> randoop_classes.txt
+            else
+              echo "${classname}" >> randoop_classes.txt
+            fi
+          done < sources_main.txt
 
+          echo "--- Classes Randoop will test ---"
+          cat randoop_classes.txt
+          echo "--- Total: $(wc -l < randoop_classes.txt) class(es) ---"
+
+      # ── Step 3: Run Randoop ──────────────────────────────────
+      # No || true — we want to see real errors
+      # All stdout AND stderr go to the log file
       - name: Generate Randoop tests
         run: |
           mkdir -p randoop-generated
+
+          if [ ! -s randoop_classes.txt ]; then
+            echo "ERROR: randoop_classes.txt is empty — nothing to test"
+            exit 1
+          fi
+
+          # Build --testclass= args one per line
           TESTCLASS_ARGS=""
           while IFS= read -r cls; do
             TESTCLASS_ARGS="$TESTCLASS_ARGS --testclass=$cls"
           done < randoop_classes.txt
-          echo "--- Running Randoop on classes ---"
-          cat randoop_classes.txt
+
+          echo "--- Randoop command ---"
+          echo "java -cp out/main:lib/randoop.jar:lib/junit4.jar:lib/hamcrest.jar"
+          echo "  randoop.main.Main gentests"
+          echo "  $TESTCLASS_ARGS"
+          echo "  --time-limit=60 --output-limit=500"
+          echo "  --junit-output-dir=randoop-generated"
+
           java -cp "out/main:lib/randoop.jar:lib/junit4.jar:lib/hamcrest.jar" \
             randoop.main.Main gentests \
             $TESTCLASS_ARGS \
@@ -157,16 +188,20 @@ jobs:
             --error-test-basename=RandoopError \
             --silently-ignore-bad-class-names=true \
             2>&1 | tee randoop-generation.log
-          echo "--- Files generated ---"
-          ls -la randoop-generated/ || echo "(none)"
 
+          echo "--- Exit code: ${PIPESTATUS[0]} ---"
+          echo "--- Generated files ---"
+          ls -la randoop-generated/ || echo "(directory empty)"
+          echo "--- .java count: $(find randoop-generated -name '*.java' | wc -l) ---"
+
+      # ── Step 4: Compile generated tests ─────────────────────
       - name: Compile Randoop tests
         run: |
           COUNT=$(find randoop-generated -name "*.java" 2>/dev/null | wc -l)
           echo "Randoop generated $COUNT test file(s)"
           mkdir -p test-results/randoop
           if [ "$COUNT" -eq 0 ]; then
-            echo "Check randoop-generation.log in artifacts for the reason"
+            echo "Check randoop-generation.log in the uploaded artifacts"
             printf '<?xml version="1.0" encoding="UTF-8"?>\n<testsuite name="RandoopNoTests" tests="0" failures="0" errors="0" skipped="0"/>\n' > test-results/randoop/empty.xml
             exit 0
           fi
@@ -175,7 +210,10 @@ jobs:
           javac -cp "out/main:lib/junit4.jar:lib/hamcrest.jar:lib/junit-platform-console-standalone.jar" \
             -d out/randoop \
             @randoop_sources.txt
+          echo "--- Compiled Randoop test classes ---"
+          find out/randoop -name "*.class" | sort
 
+      # ── Step 5: Run generated tests ──────────────────────────
       - name: Run Randoop tests
         run: |
           mkdir -p test-results/randoop
@@ -197,6 +235,7 @@ jobs:
           check_name: Randoop Regression Test Results
           comment_mode: always
 
+      # Upload everything including the log so we can diagnose
       - name: Upload Randoop artifacts
         uses: actions/upload-artifact@v4
         if: always()
@@ -206,4 +245,5 @@ jobs:
             randoop-generated/
             randoop-generation.log
             randoop_classes.txt
+            sources_main.txt
             test-results/randoop/
