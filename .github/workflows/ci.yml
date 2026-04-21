@@ -14,7 +14,7 @@ permissions:
 jobs:
 
   # ============================================================
-  # JOB 1 - JUnit (hand-written tests)
+  # JOB 1 - JUnit (hand-written tests) - runs on Java 17
   # ============================================================
   junit:
     name: JUnit Tests
@@ -94,10 +94,10 @@ jobs:
           path: test-results/junit/
 
   # ============================================================
-  # JOB 2 - EvoSuite (auto-generates tests using genetic algorithm)
-  # EvoSuite is compiled for Java 8, runs best on Java 11
-  # It uses -target to scan ALL compiled classes automatically
-  # No need to list classes manually like Randoop required
+  # JOB 2 - EvoSuite - MUST run on Java 8
+  # EvoSuite 1.0.6 requires tools.jar which only exists in JDK 8
+  # tools.jar was removed in JDK 9+ causing the fatal crash
+  # We compile with Java 8, generate with Java 8, run with Java 8
   # ============================================================
   evosuite:
     name: EvoSuite Generated Tests
@@ -108,31 +108,32 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # EvoSuite requires Java 11 - it does not support Java 17+
-      - name: Set up JDK 11 for EvoSuite
+      # Java 8 is required - tools.jar only exists in JDK 8
+      - name: Set up JDK 8 for EvoSuite
         uses: actions/setup-java@v4
         with:
-          java-version: '11'
+          java-version: '8'
           distribution: 'temurin'
+
+      - name: Verify Java version and tools.jar location
+        run: |
+          java -version
+          echo "JAVA_HOME: $JAVA_HOME"
+          echo "--- Looking for tools.jar ---"
+          find "$JAVA_HOME" -name "tools.jar" 2>/dev/null || echo "tools.jar not found"
 
       - name: Download dependencies
         run: |
           mkdir -p lib
-
           curl -sSL -o lib/junit4.jar "https://repo1.maven.org/maven2/junit/junit/4.13.2/junit-4.13.2.jar"
           curl -sSL -o lib/hamcrest.jar "https://repo1.maven.org/maven2/org/hamcrest/hamcrest-core/1.3/hamcrest-core-1.3.jar"
           curl -sSL -o lib/junit-platform-console-standalone.jar "https://repo1.maven.org/maven2/org/junit/platform/junit-platform-console-standalone/1.10.2/junit-platform-console-standalone-1.10.2.jar"
-
-          # EvoSuite: two jars needed
-          # evosuite-1.0.6.jar        = the test generator (run this to generate)
-          # evosuite-standalone-runtime = must be on classpath when compiling/running generated tests
           curl -sSL -o lib/evosuite.jar "https://github.com/EvoSuite/evosuite/releases/download/v1.0.6/evosuite-1.0.6.jar"
           curl -sSL -o lib/evosuite-runtime.jar "https://github.com/EvoSuite/evosuite/releases/download/v1.0.6/evosuite-standalone-runtime-1.0.6.jar"
-
           echo "--- Downloaded JARs ---"
           ls -lh lib/
 
-      - name: Compile main sources
+      - name: Compile main sources with Java 8
         run: |
           mkdir -p out/main
           find src -name "*.java" \
@@ -141,17 +142,19 @@ jobs:
             > sources_main.txt
           echo "--- Compiling ---"
           cat sources_main.txt
-          javac -cp "lib/*" -d out/main @sources_main.txt
+          # -source 8 -target 8 ensures bytecode is compatible with EvoSuite
+          javac -source 8 -target 8 -cp "lib/*" -d out/main @sources_main.txt
           echo "--- .class files ---"
           find out/main -name "*.class" | sort
 
-      # EvoSuite uses -target to point at the compiled classes directory
-      # It automatically finds and tests every public class — no class list needed
-      # -criterion BRANCH means it targets branch coverage specifically
-      # Generated tests go into evosuite-tests/ by default
       - name: Generate EvoSuite tests
         run: |
           mkdir -p evosuite-tests
+
+          # Pass tools.jar location explicitly to avoid the fatal crash
+          TOOLS_JAR=$(find "$JAVA_HOME" -name "tools.jar" 2>/dev/null | head -1)
+          echo "--- tools.jar found at: $TOOLS_JAR ---"
+
           echo "--- Running EvoSuite on out/main ---"
 
           java -jar lib/evosuite.jar \
@@ -159,8 +162,8 @@ jobs:
             -projectCP out/main \
             -criterion BRANCH \
             -Dsearch_budget=60 \
-            -Doutput_variables=TARGET_CLASS,criterion,Coverage,Total_Goals,Covered_Goals \
             -Dtest_dir=evosuite-tests \
+            ${TOOLS_JAR:+-Dtools_jar_location=$TOOLS_JAR} \
             2>&1 | tee evosuite-generation.log
 
           echo "--- Generated test files ---"
@@ -184,8 +187,8 @@ jobs:
           echo "--- Compiling EvoSuite tests ---"
           cat evosuite_sources.txt
 
-          # evosuite-runtime.jar must be on classpath when compiling generated tests
-          javac -cp "out/main:lib/junit4.jar:lib/hamcrest.jar:lib/evosuite-runtime.jar" \
+          javac -source 8 -target 8 \
+            -cp "out/main:lib/junit4.jar:lib/hamcrest.jar:lib/evosuite-runtime.jar" \
             -d out/evosuite \
             @evosuite_sources.txt
 
@@ -201,7 +204,6 @@ jobs:
             exit 0
           fi
 
-          # evosuite-runtime.jar must also be on classpath when running
           java -jar lib/junit-platform-console-standalone.jar \
             --class-path "out/main:out/evosuite:lib/junit4.jar:lib/hamcrest.jar:lib/evosuite-runtime.jar" \
             --scan-class-path \
