@@ -125,7 +125,8 @@ jobs:
 
           CP="out/all:lib/*"
           java -javaagent:lib/byte-buddy-agent.jar \
-            -jar lib/junit-platform-console-standalone.jar \
+            -cp "$CP:lib/junit-platform-console-standalone.jar" \
+            org.junit.platform.console.ConsoleLauncher \
             --class-path "$CP" \
             --scan-class-path \
             --reports-dir test-results/junit \
