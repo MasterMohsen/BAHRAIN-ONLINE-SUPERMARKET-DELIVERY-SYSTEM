@@ -7,6 +7,7 @@ public class Address {
     private String country;
     private String phone;
 
+    //comment
     public Address(String fullName, String street, String city,
                    String country, String phone) {
         this.fullName = fullName;
