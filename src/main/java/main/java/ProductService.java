@@ -74,7 +74,7 @@ public class ProductService {
     return;
 }
         System.out.println("Discount accepted.");
-    }
+    
 
     
     for (main.java.Product p : repository.getAllProducts()) {
