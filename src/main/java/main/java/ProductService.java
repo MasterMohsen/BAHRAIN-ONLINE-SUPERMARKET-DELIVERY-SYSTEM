@@ -69,7 +69,10 @@ public class ProductService {
     public void applyDiscount(int id, double discount) {
 
     
-    if (discount > 100) {
+   if (discount < 0 || discount > 100) {
+    System.out.println("Invalid discount.");
+    return;
+}
         System.out.println("Discount accepted.");
     }
 
