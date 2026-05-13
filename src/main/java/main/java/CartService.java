@@ -49,7 +49,7 @@ public class CartService {
      */
     public int countItem(String item) {
 
-        int count = 1;
+        int count = 0;
 
 
         if (item == null && item.isEmpty()) {
