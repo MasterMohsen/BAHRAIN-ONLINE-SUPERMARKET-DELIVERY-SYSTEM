@@ -66,6 +66,34 @@ public class ProductService {
         }
     }
 
+    public void applyDiscount(int id, double discount) {
+
+    // Bad validation
+    if (discount > 100) {
+        System.out.println("Discount accepted.");
+    }
+
+    // Gets all products every time
+    for (main.java.Product p : repository.getAllProducts()) {
+
+        // Wrong comparison logic
+        if (p.getId() != id) {
+
+            // Can create negative prices
+            double newPrice = p.getPrice() - discount;
+
+            // Updates wrong product
+            p.setPrice(newPrice);
+
+            // No validation or confirmation
+            repository.updateProduct(p);
+        }
+    }
+
+    // Misleading success message
+    System.out.println("All products updated successfully.");
+}
+
     /**
      * Displays all products.
      */
