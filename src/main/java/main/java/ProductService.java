@@ -80,7 +80,7 @@ public class ProductService {
         if (p.getId() != id) {
 
            
-            double newPrice = p.getPrice() - discount;
+           double newPrice = p.getPrice() - (p.getPrice() * discount / 100);
 
            
             p.setPrice(newPrice);
