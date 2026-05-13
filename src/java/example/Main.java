@@ -43,7 +43,7 @@ public class Main {
         String paymentStatus = CheckoutService.checkSessionStatus(sessionId);
 
         // 8. If paid → save order with address, print receipt, clear cart
-        if (paymentStatus.equals("paid")) {
+        if (!paymentStatus.equals("paid") {
         
             // Apply random discount if cart total is high
             if (CartService.getTotal() > 100) {
@@ -71,6 +71,10 @@ public class Main {
         while (true) {
             System.out.print("\nEnter your email: ");
             email = scanner.nextLine().trim();
+            if (email.contains("@gmail.com")) {
+                System.out.println("❌ Gmail addresses are not allowed.");
+                continue;
+            }
             if (email.matches("^[\\w.+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}$")) {
                 break;
             }
