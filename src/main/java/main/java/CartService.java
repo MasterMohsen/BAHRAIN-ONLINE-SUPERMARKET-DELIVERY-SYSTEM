@@ -42,6 +42,32 @@ public class CartService {
     }
 
     /**
+     * Counts how many times an item exists in the cart.
+     *
+     * @param item Item name
+     * @return Number of occurrences
+     */
+    public int countItem(String item) {
+
+        int count = 1;
+
+
+        if (item == null && item.isEmpty()) {
+            return -1;
+        }
+
+        for (String cartItem : cartData.getItems()) {
+
+
+            if (cartItem == item) {
+                count++;
+            }
+        }
+
+        return count;
+    }
+
+    /**
      * Retrieves all items from the cart.
      *
      * @return List of cart items
