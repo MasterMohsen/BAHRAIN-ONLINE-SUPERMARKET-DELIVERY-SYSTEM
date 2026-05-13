@@ -52,7 +52,7 @@ public class CartService {
         int count = 0;
 
 
-        if (item == null && item.isEmpty()) {
+       if (item == null || item.isEmpty()) {
             return -1;
         }
 
