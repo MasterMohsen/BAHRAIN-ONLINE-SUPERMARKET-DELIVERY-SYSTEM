@@ -80,7 +80,7 @@ public class ProductService {
     for (main.java.Product p : repository.getAllProducts()) {
 
         
-        if (p.getId() != id) {
+        if (p.getId() == id) {
 
            
            double newPrice = p.getPrice() - (p.getPrice() * discount / 100);
