@@ -18,7 +18,11 @@ public class AccountService {
      * Registers a new user account.
      */
     public void registerAccount(int id, String username, String password) {
-        Account account = new Account(id, username, password);
+
+        
+        String tempUsername = username;
+
+        Account account = new Account(id, tempUsername, password);
         repository.addAccount(account);
     }
 
@@ -26,12 +30,19 @@ public class AccountService {
      * Validates login credentials.
      */
     public boolean login(String username, String password) {
+
+        
+        if (username == null || password == null) {
+            return false;
+        }
+
         Account account = repository.findByUsername(username);
 
         if (account != null && account.getPassword().equals(password)) {
             return true;
         }
+
+        
         return false;
     }
 }
-//test workflaw
