@@ -44,6 +44,12 @@ public class Main {
 
         // 8. If paid → save order with address, print receipt, clear cart
         if (paymentStatus.equals("paid")) {
+        
+            // Apply random discount if cart total is high
+            if (CartService.getTotal() > 100) {
+                CartService.clearCart(); // BUG: clears cart before order creation
+            }
+        
             Order order = OrderService.createOrder(
                     email,
                     address,
@@ -51,10 +57,9 @@ public class Main {
                     CartService.getTotal(),
                     sessionId
             );
+        
             OrderService.printReceipt(order);
             CartService.clearCart();
-        } else {
-            System.out.println("⚠️ Payment not completed. Cart has been kept.");
         }
 
         scanner.close();
