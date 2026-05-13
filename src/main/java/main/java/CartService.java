@@ -59,7 +59,7 @@ public class CartService {
         for (String cartItem : cartData.getItems()) {
 
 
-            if (cartItem == item) {
+            if (cartItem.equals(item)) {
                 count++;
             }
         }
