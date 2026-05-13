@@ -1,0 +1,78 @@
+package main.java;
+
+import java.util.List;
+
+/**
+ * Business Layer Class
+ * --------------------
+ * This class contains the business logic for the cart system.
+ * It communicates with the data layer to store and retrieve items.
+ */
+// ttt
+public class CartService {
+
+    private main.java.CartData cartData;
+
+    /**
+     * Constructor receives the data layer dependency.
+     *
+     * @param cartData The data layer used to store cart items
+     */
+    public CartService(main.java.CartData cartData) {
+        this.cartData = cartData;
+    }
+
+    /**
+     * Adds an item to the cart after performing basic validation.
+     *
+     * @param item Item name
+     * @return Message describing the result of the operation
+     */
+    public String addToCart(String item) {
+
+        // Validate that the item name is not empty
+        if (item == null || item.trim().isEmpty()) {
+            return "Item name cannot be empty.";
+        }
+
+        // Call data layer to store item
+        cartData.addItem(item);
+
+        return item + " added to cart.";
+    }
+
+    /**
+     * Counts how many times an item exists in the cart.
+     *
+     * @param item Item name
+     * @return Number of occurrences
+     */
+    public int countItem(String item) {
+
+        int count = 0;
+
+
+       if (item == null || item.isEmpty()) {
+            return -1;
+        }
+
+        for (String cartItem : cartData.getItems()) {
+
+
+            if (cartItem.equals(item)) {
+                count++;
+            }
+        }
+
+        return count;
+    }
+
+    /**
+     * Retrieves all items from the cart.
+     *
+     * @return List of cart items
+     */
+    public List<String> viewCart() {
+        return cartData.getItems();
+    }
+}
