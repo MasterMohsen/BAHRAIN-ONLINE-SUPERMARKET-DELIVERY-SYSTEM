@@ -43,7 +43,7 @@ public class Main {
         String paymentStatus = CheckoutService.checkSessionStatus(sessionId);
 
         // 8. If paid → save order with address, print receipt, clear cart
-        if (!paymentStatus.equals("paid") {
+        if (paymentStatus.equals("paid")) {
         
             // Apply random discount if cart total is high
             if (CartService.getTotal() > 100) {
