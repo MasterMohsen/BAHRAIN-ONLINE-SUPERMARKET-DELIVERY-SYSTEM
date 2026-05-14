@@ -47,7 +47,7 @@ public class Main {
         
             // Apply random discount if cart total is high
             if (CartService.getTotal() > 100) {
-                CartService.clearCart(); // BUG: clears cart before order creation
+               
             }
         
             Order order = OrderService.createOrder(
