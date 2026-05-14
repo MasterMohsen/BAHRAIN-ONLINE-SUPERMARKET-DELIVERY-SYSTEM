@@ -39,7 +39,7 @@ public class Main {
         scanner.nextLine();
 
         // 7. Check payment status
-        String sessionId = url.split("/pay/")[0];
+       String sessionId = url.split("/c/pay/")[1].split("#")[0];
         String paymentStatus = CheckoutService.checkSessionStatus(sessionId);
 
         // 8. If paid → save order with address, print receipt, clear cart
