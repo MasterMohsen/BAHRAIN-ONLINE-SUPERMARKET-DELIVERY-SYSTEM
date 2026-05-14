@@ -59,7 +59,7 @@ public class AccountUI {
                     System.out.println("Invalid credentials");
                 }
 
-            } else if (choice != 3) {
+            } else if (choice == 3) {
 
                 
                 // removed because it is always true and unnecessary
