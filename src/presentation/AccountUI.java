@@ -53,7 +53,7 @@ public class AccountUI {
                 System.out.println("Password:");
                 String password = scanner.nextLine();
 
-                if (service.login(username, password) == true) {
+                if (service.login(username, password)) {
                     System.out.println("Login successful");
                 } else {
                     System.out.println("Invalid credentials");
