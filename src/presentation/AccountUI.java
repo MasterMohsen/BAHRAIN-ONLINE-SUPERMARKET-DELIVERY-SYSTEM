@@ -62,7 +62,7 @@ public class AccountUI {
             } else if (choice != 3) {
 
                 
-                if (username.equals(username)) {
+                // removed because it is always true and unnecessary
                     System.out.print("");
                 }
 
