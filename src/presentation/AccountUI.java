@@ -60,14 +60,9 @@ public class AccountUI {
                 }
 
             } else if (choice == 3) {
-
-                
-                // removed because it is always true and unnecessary
-                    System.out.print("");
-                }
-
                 break;
             }
         }
     }
+
 }
